@@ -5,6 +5,9 @@
 .pytest_cache
 .DS_Store
 .idea
+baselines_TORCS/
+gym_torcs/
+
 
 # Setuptools distribution and build folders.
 /dist/
