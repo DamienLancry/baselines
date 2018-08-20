@@ -41,10 +41,7 @@ def make_mujoco_env(env_id, seed, i, reward_scale=1.0):
     set_global_seeds(myseed)
     env = gym.make(env_id)
     if env_id == 'torcs-v0':
-        print(env.port)
-        print(i)
         env.port = 3001 + i
-        print(env.port)
     logger_path = None if logger.get_dir() is None else os.path.join(logger.get_dir(), str(rank))
     env = Monitor(env, logger_path, allow_early_resets=True)
     env.seed(seed)
@@ -94,7 +91,7 @@ def common_arg_parser():
     parser.add_argument('--env', help='environment ID', type=str, default='Reacher-v2')
     parser.add_argument('--seed', help='RNG seed', type=int, default=None)
     parser.add_argument('--alg', help='Algorithm', type=str, default='ppo2')
-    parser.add_argument('--num_timesteps', type=float, default=1e6), 
+    parser.add_argument('--num_timesteps', type=float, default=1e6),
     parser.add_argument('--network', help='network type (mlp, cnn, lstm, cnn_lstm, conv_only)', default=None)
     parser.add_argument('--gamestate', help='game state to load (so far only used in retro games)', default=None)
     parser.add_argument('--num_env', help='Number of environment copies being run in parallel. When not specified, set to number of cpus for Atari, and to 1 for Mujoco', default=None, type=int)
@@ -127,6 +124,3 @@ def parse_unknown_args(args):
         retval[key] = value
 
     return retval
-
-
-

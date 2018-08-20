@@ -95,7 +95,6 @@ def build_env(args):
         if args.num_env:
             env = SubprocVecEnv([(lambda y: (lambda: make_mujoco_env(env_id, \
                       seed, y, args.reward_scale)))(i) for i in range(args.num_env)])
-            exit(0)
         else:
             env = DummyVecEnv([lambda: make_mujoco_env(env_id, seed, 0, args.reward_scale)])
 
