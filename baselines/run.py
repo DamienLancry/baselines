@@ -1,5 +1,5 @@
 import sys
-import multiprocessing 
+import multiprocessing
 import os
 import os.path as osp
 import gym
@@ -29,9 +29,9 @@ for env in gym.envs.registry.all():
     env_type = env._entry_point.split(':')[0].split('.')[-1]
     _game_envs[env_type].add(env.id)
 
-# reading benchmark names directly from retro requires 
-# importing retro here, and for some reason that crashes tensorflow 
-# in ubuntu 
+# reading benchmark names directly from retro requires
+# importing retro here, and for some reason that crashes tensorflow
+# in ubuntu
 _game_envs['retro'] = set([
     'BubbleBobble-Nes',
     'SuperMarioBros-Nes',
@@ -48,7 +48,7 @@ _game_envs['torcs'].add('torcs-v0')
 
 def train(args, extra_args):
     env_type, env_id = get_env_type(args.env)
-        
+
     total_timesteps = int(args.num_timesteps)
     seed = args.seed
 
@@ -63,13 +63,13 @@ def train(args, extra_args):
     else:
         if alg_kwargs.get('network') is None:
             alg_kwargs['network'] = get_default_network(env_type)
- 
-       
-    
+
+
+
     print('Training {} on {}:{} with arguments \n{}'.format(args.alg, env_type, env_id, alg_kwargs))
 
     model = learn(
-        env=env,  
+        env=env,
         seed=seed,
         total_timesteps=total_timesteps,
         **alg_kwargs
@@ -84,16 +84,17 @@ def build_env(args):
     nenv = args.num_env or ncpu
     alg = args.alg
     rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
-    seed = args.seed    
+    seed = args.seed
 
     env_type, env_id = get_env_type(args.env)
     if env_type == 'mujoco' or env_type == 'torcs':
         get_session(tf.ConfigProto(allow_soft_placement=True,
-                                   intra_op_parallelism_threads=1, 
+                                   intra_op_parallelism_threads=1,
                                    inter_op_parallelism_threads=1))
 
         if args.num_env:
-            env = SubprocVecEnv([lambda: make_mujoco_env(env_id, seed, i, args.reward_scale) for i in range(args.num_env)])
+            env = SubprocVecEnv([(lambda y: (lambda: make_mujoco_env(env_id, \
+                      seed, y, args.reward_scale)))(i) for i in range(args.num_env)])
             exit(0)
         else:
             env = DummyVecEnv([lambda: make_mujoco_env(env_id, seed, 0, args.reward_scale)])
@@ -126,14 +127,14 @@ def build_env(args):
         env.seed(args.seed)
         env = bench.Monitor(env, logger.get_dir())
         env = retro_wrappers.wrap_deepmind_retro(env)
-        
+
     elif env_type == 'classic_control':
         def make_env():
             e = gym.make(env_id)
             e = bench.Monitor(e, logger.get_dir(), allow_early_resets=True)
             e.seed(seed)
             return e
-            
+
         env = DummyVecEnv([make_env])
 
     else:
@@ -151,7 +152,7 @@ def get_env_type(env_id):
         for g, e in _game_envs.items():
             if env_id in e:
                 env_type = g
-                break 
+                break
         assert env_type is not None, 'env_id {} is not recognized in env types'.format(env_id, _game_envs.keys())
 
     return env_type, env_id
@@ -163,7 +164,7 @@ def get_default_network(env_type):
         return 'cnn'
 
     raise ValueError('Unknown env_type {}'.format(env_type))
-    
+
 def get_alg_module(alg, submodule=None):
     submodule = submodule or alg
     try:
@@ -172,9 +173,9 @@ def get_alg_module(alg, submodule=None):
     except ImportError:
         # then from rl_algs
         alg_module = import_module('.'.join(['rl_' + 'algs', alg, submodule]))
-    
+
     return alg_module
-        
+
 
 def get_learn_function(alg):
     return get_alg_module(alg).learn
@@ -184,29 +185,29 @@ def get_learn_function_defaults(alg, env_type):
         alg_defaults = get_alg_module(alg, 'defaults')
         kwargs = getattr(alg_defaults, env_type)()
     except (ImportError, AttributeError):
-        kwargs = {}       
+        kwargs = {}
     return kwargs
-    
-def parse(v): 
+
+def parse(v):
     '''
     convert value of a command-line arg to a python object if possible, othewise, keep as string
     '''
 
     assert isinstance(v, str)
     try:
-        return eval(v) 
-    except (NameError, SyntaxError): 
+        return eval(v)
+    except (NameError, SyntaxError):
         return v
 
 
 def main():
-    # configure logger, disable logging in child MPI processes (with rank > 0) 
-            
+    # configure logger, disable logging in child MPI processes (with rank > 0)
+
     arg_parser = common_arg_parser()
     args, unknown_args = arg_parser.parse_known_args()
     extra_args = {k: parse(v) for k,v in parse_unknown_args(unknown_args).items()}
 
-    
+
     if MPI is None or MPI.COMM_WORLD.Get_rank() == 0:
         rank = 0
         logger.configure()
@@ -219,7 +220,7 @@ def main():
     if args.save_path is not None and rank == 0:
         save_path = osp.expanduser(args.save_path)
         model.save(save_path)
-    
+
 
     if args.play:
         logger.log("Running trained model")
@@ -233,7 +234,7 @@ def main():
 
             if done:
                 obs = env.reset()
-            
+
 
 
 if __name__ == '__main__':
