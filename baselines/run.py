@@ -42,6 +42,8 @@ _game_envs['retro'] = set([
     'FinalFight-Snes',
     'SpaceInvaders-Snes',
 ])
+from gym_torcs import gym_torcs
+_game_envs['torcs'].add('torcs-v0')
 
 
 def train(args, extra_args):
@@ -85,15 +87,16 @@ def build_env(args):
     seed = args.seed    
 
     env_type, env_id = get_env_type(args.env)
-    if env_type == 'mujoco':
+    if env_type == 'mujoco' or env_type == 'torcs':
         get_session(tf.ConfigProto(allow_soft_placement=True,
                                    intra_op_parallelism_threads=1, 
                                    inter_op_parallelism_threads=1))
 
         if args.num_env:
-            env = SubprocVecEnv([lambda: make_mujoco_env(env_id, seed + i if seed is not None else None, args.reward_scale) for i in range(args.num_env)])    
+            env = SubprocVecEnv([lambda: make_mujoco_env(env_id, seed, i, args.reward_scale) for i in range(args.num_env)])
+            exit(0)
         else:
-            env = DummyVecEnv([lambda: make_mujoco_env(env_id, seed, args.reward_scale)])
+            env = DummyVecEnv([lambda: make_mujoco_env(env_id, seed, 0, args.reward_scale)])
 
         env = VecNormalize(env)
 
@@ -154,7 +157,7 @@ def get_env_type(env_id):
     return env_type, env_id
 
 def get_default_network(env_type):
-    if env_type == 'mujoco' or env_type == 'classic_control':
+    if env_type == 'mujoco' or env_type == 'classic_control' or env_type == 'torcs':
         return 'mlp'
     if env_type == 'atari':
         return 'cnn'
