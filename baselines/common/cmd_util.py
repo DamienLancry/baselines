@@ -42,7 +42,7 @@ def make_mujoco_env(env_id, seed, i, reward_scale=1.0):
     env = gym.make(env_id)
     if env_id == 'torcs-v0':
         env.port = 3001 + i
-    logger_path = None if logger.get_dir() is None else os.path.join(logger.get_dir(), str(rank))
+    logger_path = None if logger.get_dir() is None else os.path.join(logger.get_dir(), str(rank) + '.' + str(i))
     env = Monitor(env, logger_path, allow_early_resets=True)
     env.seed(seed)
 
